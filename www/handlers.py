@@ -187,13 +187,21 @@ def manage_blogs(*, page='1'):
     }
 
 
-@get('/manage/blogs/create')
-def manage_create_blog():
-    return {
-        '__template__': 'manage_blog_edit.html',
-        'id': '',
-        'action': '/api/blogs'
-    }
+@get('/manage/blogs/{ctrl_type}')
+def manage_create_blog(ctrl_type, request):
+    if ctrl_type == 'create':
+        return {
+            '__template__': 'manage_blog_edit.html',
+            'id': '',
+            'action': '/api/blogs'
+        }
+    else:
+        logging.info(request)
+        return {
+            '__template__': 'manage_blog_edit.html',
+            'id': request.query['id'],
+            'action': '/api/blogs'
+        }
 
 
 _RE_EMAIL = re.compile(r'^[a-z0-9\.\-\_]+\@[a-z0-9\-\_]+(\.[a-z0-9\-\_]+){1,4}$')
@@ -231,7 +239,7 @@ async def api_register_user(*, email, name, passwd):
     return r
 
 
-@get('api/blogs')
+@get('/api/blogs')
 async def api_blogs(*, page='1'):
     """
     分页获取日志列表
@@ -259,9 +267,9 @@ async def api_get_blog(*, id):
 
 
 @post('/api/blogs')
-async def api_create_blog(request, *, name, summary, content):
+async def api_create_blog(request, *, id, name, summary, content):
     """
-    创建日志
+    创建/编辑日志
     :param request:
     :param name:
     :param summary:
@@ -275,6 +283,28 @@ async def api_create_blog(request, *, name, summary, content):
         raise APIValueError('summary', 'summary cannot be empty.')
     if not content or not content.strip():
         raise APIValueError('content', 'content cannot be empty.')
-    blog = Blog(user_id=request.__user__.id, user_name=request.__user__.name, user_image=request.__user__.image, name=name.strip(), summary=summary.strip(), content=content.strip())
-    await blog.save()
+
+    if id != '':
+        blog = await Blog.find(id)
+        if blog is not None:
+            blog.name = name.strip()
+            blog.summary = summary.strip()
+            blog.content = content.strip()
+            await blog.update()
+        else:
+            blog = Blog(user_id=request.__user__.id, user_name=request.__user__.name, user_image=request.__user__.image,
+                        name=name.strip(), summary=summary.strip(), content=content.strip())
+            await blog.save()
+    else:
+        blog = Blog(user_id=request.__user__.id, user_name=request.__user__.name, user_image=request.__user__.image,
+                    name=name.strip(), summary=summary.strip(), content=content.strip())
+        await blog.save()
+    return blog
+
+
+@post('/api/blogs/{id}/delete')
+async def api_delete_blogs(*, id):
+    blog = await Blog.find(id)
+    if blog:
+        await blog.remove()
     return blog
