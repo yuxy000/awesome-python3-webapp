@@ -39,7 +39,6 @@
         } else {
             $('#loading').hide();
             initVM({
-                id: '',
                 name: '',
                 summary: '',
                 content: ''
@@ -71,11 +70,6 @@
     <div id="vm" class="uk-width-2-3">
         <form v-on="submit: submit" class="uk-form uk-form-stacked">
             <div class="uk-alert uk-alert-danger uk-hidden"></div>
-            <div class="uk-form-row uk-hidden">
-                <div class="uk-form-controls">
-                    <input type="text" v-model="id" name="id" class="uk-width-1-1">
-                </div>
-            </div>
             <div class="uk-form-row">
                 <label class="uk-form-label">标题:</label>
                 <div class="uk-form-controls">
